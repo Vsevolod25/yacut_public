@@ -20,15 +20,12 @@ def add_urlmap():
     data = request.get_json(silent=True)
     if data is None:
         raise InvalidAPIUsage('Отсутствует тело запроса')
-    url = data.get('url')
-    if not url:
-        raise InvalidAPIUsage('"url" является обязательным полем!')
     try:
         urlmap_dict = URLMap().create_urlmap(
-            url, data.get('custom_id'), api=True
+            data.get('url'), data.get('custom_id'), api=True
         )
     except ValidationError as error:
-        raise InvalidAPIUsage(str(error))
+        raise InvalidAPIUsage(error.args[0])
     return jsonify(
         {
             'url': urlmap_dict['url'],

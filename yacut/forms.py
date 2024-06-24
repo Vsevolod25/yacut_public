@@ -2,7 +2,13 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, URLField
 from wtforms.validators import DataRequired, Length, Optional, Regexp, URL
 
-from .constants import MAX_LENGTH_URL, MIN_LENGTH_URL
+from .constants import (
+    MAX_LENGTH_SHORT,
+    MAX_LENGTH_URL,
+    MIN_LENGTH_SHORT,
+    MIN_LENGTH_URL,
+    SHORT_REGULAR_EXPRESSION
+)
 
 
 class URLMapForm(FlaskForm):
@@ -24,8 +30,16 @@ class URLMapForm(FlaskForm):
     custom_id = StringField(
         'Ваш вариант короткой ссылки',
         validators=[
+            Length(
+                MIN_LENGTH_SHORT,
+                MAX_LENGTH_SHORT,
+                message=(
+                    'Ссылка не должна быть длиннее '
+                    f'{MAX_LENGTH_SHORT} символов.'
+                ),
+            ),
             Regexp(
-                regex=r'[a-zA-Z0-9]{1,16}$',
+                regex=SHORT_REGULAR_EXPRESSION,
                 message=(
                     'Допускаются только символы, не нарушающие формат ссылки'
                 )

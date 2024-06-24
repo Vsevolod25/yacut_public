@@ -7,7 +7,14 @@ from string import ascii_letters, digits
 from flask import url_for
 
 from . import db
-from .constants import MAX_LENGTH_SHORT, MAX_LENGTH_URL, REDIRECT_VIEW
+from .constants import (
+    MAX_LENGTH_SHORT,
+    MAX_LENGTH_URL,
+    MIN_LENGTH_SHORT,
+    MIN_LENGTH_URL,
+    REDIRECT_VIEW,
+    SHORT_REGULAR_EXPRESSION
+)
 from .error_handlers import InvalidAPIUsage, ValidationError
 
 
@@ -29,9 +36,12 @@ class URLMap(db.Model):
             timestamp=self.timestamp
         )
 
+    def filter_by_short(self, short_id):
+        return self.query.filter_by(short=short_id).first()
+
     def get_unique_short_id(self):
         short_id = ''.join(choices(ascii_letters + digits, k=6))
-        while URLMap.query.filter_by(short=short_id).first():
+        while self.filter_by_short(short_id):
             short_id = ''.join(choices(ascii_letters + digits, k=6))
         return short_id
 
@@ -39,26 +49,39 @@ class URLMap(db.Model):
         if not custom_id:
             custom_id = self.get_unique_short_id()
         else:
-            if api:
-                self.validate_custom_id(custom_id)
-            if URLMap.query.filter_by(short=custom_id).first():
+            if self.filter_by_short(custom_id):
                 raise ValidationError(
                     'Предложенный вариант короткой ссылки уже существует.'
                 )
+        if api:
+            self.validate_urlmap(original, custom_id)
         urlmap = URLMap(original=original, short=custom_id)
         db.session.add(urlmap)
         db.session.commit()
         return urlmap.to_dict()
 
-    def validate_custom_id(self, custom_id):
-        if not match(r'[a-zA-Z0-9]{1,16}$', custom_id):
+    def validate_urlmap(self, original, custom_id):
+        if not original:
+            raise ValidationError(
+                '"url" является обязательным полем!'
+            )
+        if len(original) not in range(MIN_LENGTH_URL, MAX_LENGTH_URL + 1):
+            raise ValidationError(
+                'Указано недопустимое имя для длинной ссылки'
+            )
+        if (
+            (not match(SHORT_REGULAR_EXPRESSION, custom_id)) |
+            (len(custom_id) not in range(
+                MIN_LENGTH_SHORT, MAX_LENGTH_SHORT + 1
+            ))
+        ):
             raise ValidationError(
                 'Указано недопустимое имя для короткой ссылки'
             )
         return custom_id
 
     def get_urlmap(self, short_id):
-        urlmap = self.query.filter_by(short=short_id).first()
+        urlmap = self.filter_by_short(short_id)
         if not urlmap:
             raise InvalidAPIUsage(
                 'Указанный id не найден', HTTPStatus.NOT_FOUND
