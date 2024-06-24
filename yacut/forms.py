@@ -14,7 +14,10 @@ class URLMapForm(FlaskForm):
             Length(
                 MIN_LENGTH_URL,
                 MAX_LENGTH_URL,
-                message='Ссылка не должна быть длиннее 256 символов.'
+                message=(
+                    'Ссылка не должна быть длиннее '
+                    f'{MAX_LENGTH_URL} символов.'
+                )
             )
         ]
     )

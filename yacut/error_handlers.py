@@ -33,9 +33,5 @@ def internal_error(error):
     return render_template('500.html'), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-class RepeatedShortException(Exception):
-    pass
-
-
-class InvalidShortNameException(Exception):
+class ValidationError(Exception):
     pass
