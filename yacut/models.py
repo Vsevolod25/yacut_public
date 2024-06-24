@@ -40,10 +40,7 @@ class URLMap(db.Model):
             custom_id = self.get_unique_short_id()
         else:
             if api:
-                if not match(r'[a-zA-Z0-9]{1,16}$', custom_id):
-                    raise ValidationError(
-                        'Указано недопустимое имя для короткой ссылки'
-                    )
+                self.validate_custom_id(custom_id)
             if URLMap.query.filter_by(short=custom_id).first():
                 raise ValidationError(
                     'Предложенный вариант короткой ссылки уже существует.'
