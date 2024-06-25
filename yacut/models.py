@@ -11,7 +11,6 @@ from .constants import (
     MAX_LENGTH_SHORT,
     MAX_LENGTH_URL,
     MIN_LENGTH_SHORT,
-    MIN_LENGTH_URL,
     REDIRECT_VIEW,
     SHORT_REGULAR_EXPRESSION
 )
@@ -46,6 +45,8 @@ class URLMap(db.Model):
         return short_id
 
     def create_urlmap(self, original, custom_id, api=False):
+        if api:
+            self.validate_urlmap(original, custom_id)
         if not custom_id:
             custom_id = self.get_unique_short_id()
         else:
@@ -53,8 +54,6 @@ class URLMap(db.Model):
                 raise ValidationError(
                     'Предложенный вариант короткой ссылки уже существует.'
                 )
-        if api:
-            self.validate_urlmap(original, custom_id)
         urlmap = URLMap(original=original, short=custom_id)
         db.session.add(urlmap)
         db.session.commit()
@@ -65,19 +64,16 @@ class URLMap(db.Model):
             raise ValidationError(
                 '"url" является обязательным полем!'
             )
-        if len(original) not in range(MIN_LENGTH_URL, MAX_LENGTH_URL + 1):
-            raise ValidationError(
-                'Указано недопустимое имя для длинной ссылки'
-            )
-        if (
-            (not match(SHORT_REGULAR_EXPRESSION, custom_id)) |
-            (len(custom_id) not in range(
-                MIN_LENGTH_SHORT, MAX_LENGTH_SHORT + 1
-            ))
-        ):
-            raise ValidationError(
-                'Указано недопустимое имя для короткой ссылки'
-            )
+        if custom_id:
+            if (
+                (not match(SHORT_REGULAR_EXPRESSION, custom_id)) |
+                (len(custom_id) not in range(
+                    MIN_LENGTH_SHORT, MAX_LENGTH_SHORT + 1
+                ))
+            ):
+                raise ValidationError(
+                    'Указано недопустимое имя для короткой ссылки'
+                )
         return custom_id
 
     def get_urlmap(self, short_id):
